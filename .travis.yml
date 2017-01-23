@@ -1,0 +1,8 @@
+language: objective-c
+osx_image: xcode8
+
+env:
+  - DESTINATION='platform=iOS Simulator,name=iPhone 7'
+
+script:
+  - set -o pipefail && xcodebuild -scheme fut -destination "$DESTINATION" test | xcpretty
