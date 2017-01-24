@@ -6,7 +6,8 @@
 //  Copyright © 2017 nkim. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+
 
 //! Project version number for fut.
 FOUNDATION_EXPORT double futVersionNumber;

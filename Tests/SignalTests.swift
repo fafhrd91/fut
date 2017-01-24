@@ -16,7 +16,7 @@ class SignalTests: XCTestCase {
         var result = 0
         let signal = Signal<Int>()
 
-        _ = signal.listen(self, exec: .Same) { (ctx, res) in
+        _ = signal.wait(self, exec: .Same) { (ctx, res) in
             if ctx === self {
                 result = res
             }
@@ -54,11 +54,10 @@ class SignalTests: XCTestCase {
         if group2.wait(timeout: .now() + .seconds(1)) == .timedOut {
             XCTFail("can not complete signal handling within 1 second")
         }
-        print(result)
         XCTAssertTrue(result==100)
     }
 
-    func testConcurrentListen() {
+    func testConcurrentWait() {
         var result = 0
         let signal = Signal<Int>()
         let group = DispatchGroup()
@@ -70,7 +69,7 @@ class SignalTests: XCTestCase {
             group.enter()
             group2.enter()
             queue.async {
-                _ = signal.listen(self, exec: .Queue(queue)) { ctx, res in
+                _ = signal.wait(self, exec: .Queue(queue)) { ctx, res in
                     result += res
                     group2.leave()
                 }
@@ -87,7 +86,6 @@ class SignalTests: XCTestCase {
         if group2.wait(timeout: .now() + .seconds(1)) == .timedOut {
             XCTFail("can not complete signal handling within 1 second")
         }
-        print(result)
         XCTAssertTrue(result==200)
     }
 
@@ -112,7 +110,7 @@ class SignalTests: XCTestCase {
         }
     }
 
-    func testListenMainTarget() {
+    func testWaitMainTarget() {
         let signal = Signal<Int>()
         let expect = self.expectation(description: "Signal handler")
         let testQueueKey = DispatchSpecificKey<Void>()
@@ -120,7 +118,7 @@ class SignalTests: XCTestCase {
         let target = Target.Queue(DispatchQueue.main)
         DispatchQueue.main.setSpecific(key: testQueueKey, value: ())
         
-        _ = signal.listen(self, exec: target) { ctx, res in
+        _ = signal.wait(self, exec: target) { ctx, res in
             XCTAssertNotNil(DispatchQueue.getSpecific(key: testQueueKey))
             expect.fulfill()
         }
@@ -152,11 +150,11 @@ class SignalTests: XCTestCase {
         }
     }
 
-    func testListenBackgroundTarget() {
+    func testWaitBackgroundTarget() {
         let signal = Signal<Int>()
         let expect = self.expectation(description: "Signal handler")
 
-        _ = signal.listen(self, exec: Target.Bg) { ctx, res in
+        _ = signal.wait(self, exec: Target.Bg) { ctx, res in
             if let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()),
                 qos == DispatchQoS.QoSClass.background {
                 expect.fulfill()
@@ -171,7 +169,7 @@ class SignalTests: XCTestCase {
         }
     }
     
-    func testListenSameTarget() {
+    func testNotifySameTarget() {
         var result = 0
         let signal = Signal<Int>()
         
@@ -188,7 +186,7 @@ class SignalTests: XCTestCase {
         var result = 0
         let signal = Signal<Int>()
 
-        let listener = signal.listen(self, exec: .Same) { (ctx, res) in
+        let listener = signal.wait(self, exec: .Same) { (ctx, res) in
             result = res
         }
         listener.cancel()
@@ -200,7 +198,7 @@ class SignalTests: XCTestCase {
         var result = 0
         let signal = Signal<Int>()
         
-        _ = signal.listen(self, exec: .Same) { (ctx, res) in
+        _ = signal.wait(self, exec: .Same) { (ctx, res) in
             result = res
         }
         signal.reset()
@@ -222,12 +220,12 @@ class SignalTests: XCTestCase {
         XCTAssertTrue(result==0)
     }
     
-    func testWeakListenContext() {
+    func testWeakWaitContext() {
         var result = 0
         let signal = Signal<Int>()
         var context: NSObject! = NSObject()
 
-        _ = signal.listen(context, exec: .Same) { (ctx, res) in
+        _ = signal.wait(context, exec: .Same) { (ctx, res) in
             result = res
         }
         context = nil
@@ -242,10 +240,10 @@ class SignalTests: XCTestCase {
         let listeners = SignalListeners()
         
         listeners.set(
-            signal.listen(self, exec: .Same) { (ctx, res) in
+            signal.wait(self, exec: .Same) { (ctx, res) in
                 result += res
             },
-            signal.listen(self, exec: .Same) { (ctx, res) in
+            signal.wait(self, exec: .Same) { (ctx, res) in
                 result += res
             }
         )
@@ -255,7 +253,7 @@ class SignalTests: XCTestCase {
         
         // reset listeners container and set new signal handlers
         listeners.set(
-            signal.listen(self, exec: .Same) { (ctx, res) in
+            signal.wait(self, exec: .Same) { (ctx, res) in
                 result += res
             }
         )
@@ -264,7 +262,7 @@ class SignalTests: XCTestCase {
 
         // register on
         listeners.append(
-            signal.listen(self, exec: .Same) { (ctx, res) in
+            signal.wait(self, exec: .Same) { (ctx, res) in
                 result += res
             }
         )
@@ -283,10 +281,10 @@ class SignalTests: XCTestCase {
         var listeners: SignalListeners! = SignalListeners()
         
         listeners.set(
-            signal.listen(self, exec: .Same) { (ctx, res) in
+            signal.wait(self, exec: .Same) { (ctx, res) in
                 result += res
             },
-            signal.listen(self, exec: .Same) { (ctx, res) in
+            signal.wait(self, exec: .Same) { (ctx, res) in
                 result += res
             }
         )

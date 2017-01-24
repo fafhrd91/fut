@@ -28,6 +28,24 @@ public final class Signal<T> {
 
     private var listeners = Set<SignalDispatcher<T>>()
 
+    public func wait<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, T) -> Void) -> SignalListener
+    {
+        let wrapper: (T) -> Bool = { [weak context] data in
+            if let context = context {
+                switch exec {
+                case .Same: f(context, data)
+                case .QoS(let qos): DispatchQueue.global(qos: qos).async { f(context, data) }
+                case .Queue(let queue): queue.async { f(context, data) }
+                }
+                return true
+            }
+            return false
+        }
+        return synchronized(self) {
+            return self.listeners.insert(SignalDispatcher(wrapper)).memberAfterInsert
+        }
+    }
+    
     public func notify<TContext: AnyObject>(_ context:TContext, exec:Target, f: @escaping (TContext) -> Void) -> SignalListener
     {
         let wrapper: (T) -> Bool = { [weak context] data in
@@ -42,24 +60,6 @@ public final class Signal<T> {
             return false
         }
 
-        return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(wrapper)).memberAfterInsert
-        }
-    }
-
-    public func listen<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, T) -> Void) -> SignalListener
-    {
-        let wrapper: (T) -> Bool = { [weak context] data in
-            if let context = context {
-                switch exec {
-                    case .Same: f(context, data)
-                    case .QoS(let qos): DispatchQueue.global(qos: qos).async { f(context, data) }
-                    case .Queue(let queue): queue.async { f(context, data) }
-                }
-                return true
-            }
-            return false
-        }
         return synchronized(self) {
             return self.listeners.insert(SignalDispatcher(wrapper)).memberAfterInsert
         }
