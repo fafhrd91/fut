@@ -7,8 +7,6 @@
 //
 //  very simple future implementation
 
-import Foundation
-
 
 public enum FutureState<TResult> {
     case pending

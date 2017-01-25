@@ -6,8 +6,6 @@
 //  Copyright © 2017 nkim. All rights reserved.
 //
 
-import Foundation
-
 
 public func synchronized(_ lock: AnyObject, _ f: () -> ()) {
     objc_sync_enter(lock)

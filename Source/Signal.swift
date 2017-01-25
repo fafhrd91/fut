@@ -6,8 +6,6 @@
 //  Copyright © 2017 Nikolay Kim. All rights reserved.
 //
 
-import Foundation
-
 
 public final class Signal<T> {
 

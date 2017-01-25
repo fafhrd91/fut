@@ -6,8 +6,6 @@
 //  Copyright © 2017 nkim. All rights reserved.
 //
 
-import Foundation
-
 
 public enum Target {
     /// Execute signal handler on the same queue as source of signal

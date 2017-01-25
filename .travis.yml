@@ -2,8 +2,20 @@ language: objective-c
 osx_image: xcode8.2
 
 env:
-  - DESTINATION='platform=macOS,arch=x86_64'
-  - DESTINATION='platform=iOS Simulator,id=22FA2149-1241-469C-BF6D-462D3837DB72'
+  global:
+  - IOS_SDK=iphonesimulator10.2
+  - MACOS_SDK=macosx10.12
 
+  matrix:
+  - DESTINATION="OS=10.0,name=iPhone 7 Plus" SDK="$IOS_SDK"
+  - DESTINATION="OS=9.0,name=iPhone 6" SDK="$IOS_SDK"
+  - DESTINATION="OS=8.1,name=iPhone 4S" SDK="$IOS_SDK"
+
+  - DESTINATION="arch=x86_64" SDK="$MACOS_SDK"
+  
 script:
-  - set -o pipefail && xcodebuild -scheme fut -destination "$DESTINATION" test CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= PROVISIONING_PROFILE= | xcpretty
+  - set -o pipefail
+  - xcodebuild -version
+  - xcodebuild -showsdks
+
+  - xcodebuild -scheme fut -sdk "$SDK" -destination "$DESTINATION" test | xcpretty
