@@ -28,40 +28,31 @@ public final class Signal<T> {
 
     private var listeners = Set<SignalDispatcher<T>>()
 
-    public func wait<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, T) -> Void) -> SignalListener
+    public func wait(_ exec:Target, f:@escaping (T) -> Void) -> SignalListener
     {
-        let wrapper: (T) -> Bool = { [weak context] data in
-            if let context = context {
-                switch exec {
-                case .Same: f(context, data)
-                case .QoS(let qos): DispatchQueue.global(qos: qos).async { f(context, data) }
-                case .Queue(let queue): queue.async { f(context, data) }
-                }
-                return true
-            }
-            return false
-        }
         return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(wrapper)).memberAfterInsert
+            return self.listeners.insert(SignalDispatcher(exec, waiter:f)).memberAfterInsert
         }
     }
-    
+
+    public func wait<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, T) -> Void) -> SignalListener
+    {
+        return synchronized(self) {
+            return self.listeners.insert(SignalDispatcher(context, exec:exec, waiter:f)).memberAfterInsert
+        }
+    }
+
+    public func notify(_ exec:Target, f:@escaping () -> Void) -> SignalListener
+    {
+        return synchronized(self) {
+            return self.listeners.insert(SignalDispatcher(exec, notify:f)).memberAfterInsert
+        }
+    }
+
     public func notify<TContext: AnyObject>(_ context:TContext, exec:Target, f: @escaping (TContext) -> Void) -> SignalListener
     {
-        let wrapper: (T) -> Bool = { [weak context] data in
-            if let context = context {
-                switch exec {
-                    case .Same: f(context)
-                    case .QoS(let qos): DispatchQueue.global(qos: qos).async { f(context) }
-                    case .Queue(let queue): queue.async { f(context) }
-                }
-                return true
-            }
-            return false
-        }
-
         return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(wrapper)).memberAfterInsert
+            return self.listeners.insert(SignalDispatcher(context, exec:exec, notify:f)).memberAfterInsert
         }
     }
 
@@ -114,12 +105,69 @@ public class SignalListener: Hashable {
 }
 
 
-private class SignalDispatcher<T>: SignalListener {
+internal class SignalDispatcher<T>: SignalListener {
 
     let handler: (T) -> Bool
 
-    init(_ handler: @escaping (T) -> Bool)
+    init(_ exec:Target, notify:@escaping () -> Void)
     {
+        let handler: (T) -> Bool = { data in
+            switch exec {
+                case .Same: notify()
+                case .QoS(let qos): DispatchQueue.global(qos: qos).async { notify() }
+                case .Queue(let queue): queue.async { notify() }
+            }
+            return true
+        }
+
+        self.handler = handler
+    }
+
+    init(_ exec:Target, waiter:@escaping (T) -> Void)
+    {
+        let handler: (T) -> Bool = { data in
+            switch exec {
+                case .Same: waiter(data)
+                case .QoS(let qos): DispatchQueue.global(qos: qos).async { waiter(data) }
+                case .Queue(let queue): queue.async { waiter(data) }
+            }
+            return true
+        }
+
+        self.handler = handler
+    }
+    
+    init<TContext: AnyObject>(_ context:TContext, exec:Target, notify:@escaping (TContext) -> Void)
+    {
+        let handler: (T) -> Bool = { [weak context] data in
+            if let context = context {
+                switch exec {
+                    case .Same: notify(context)
+                    case .QoS(let qos): DispatchQueue.global(qos: qos).async { notify(context) }
+                    case .Queue(let queue): queue.async { notify(context) }
+                }
+                return true
+            }
+            return false
+        }
+
+        self.handler = handler
+    }
+    
+    init<TContext: AnyObject>(_ context:TContext, exec:Target, waiter:@escaping (TContext, T) -> Void)
+    {
+        let handler: (T) -> Bool = { [weak context] data in
+            if let context = context {
+                switch exec {
+                    case .Same: waiter(context, data)
+                    case .QoS(let qos): DispatchQueue.global(qos: qos).async { waiter(context, data) }
+                    case .Queue(let queue): queue.async { waiter(context, data) }
+                }
+                return true
+            }
+            return false
+        }
+
         self.handler = handler
     }
 

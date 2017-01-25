@@ -12,6 +12,7 @@
 		956A86EE1E36B24100E2B6D7 /* fut.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 956A86E41E36B24000E2B6D7 /* fut.framework */; };
 		956A86F51E36B24100E2B6D7 /* fut.h in Headers */ = {isa = PBXBuildFile; fileRef = 956A86E71E36B24000E2B6D7 /* fut.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9571C5DF1E36B84C009601C0 /* synchronized.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9571C5DE1E36B84C009601C0 /* synchronized.swift */; };
+		95B34FF21E3821B800C53AC4 /* future.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B34FF11E3821B800C53AC4 /* future.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,7 @@
 		9571C5D81E36B3FC009601C0 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Tests/Info.plist; sourceTree = SOURCE_ROOT; };
 		9571C5DB1E36B46F009601C0 /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		9571C5DE1E36B84C009601C0 /* synchronized.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = synchronized.swift; path = Source/synchronized.swift; sourceTree = SOURCE_ROOT; };
+		95B34FF11E3821B800C53AC4 /* future.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = future.swift; path = Source/future.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,9 +80,10 @@
 		956A86E61E36B24000E2B6D7 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				95B34FF11E3821B800C53AC4 /* future.swift */,
 				9571C5D51E36B3F2009601C0 /* Info.plist */,
-				9571C5DE1E36B84C009601C0 /* synchronized.swift */,
 				956276881E36BA87008C2D2F /* signal.swift */,
+				9571C5DE1E36B84C009601C0 /* synchronized.swift */,
 			);
 			name = Source;
 			path = defer;
@@ -208,6 +211,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9571C5DF1E36B84C009601C0 /* synchronized.swift in Sources */,
+				95B34FF21E3821B800C53AC4 /* future.swift in Sources */,
 				956276891E36BA87008C2D2F /* signal.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
