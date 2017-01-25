@@ -1,5 +1,5 @@
 //
-//  synchronized.swift
+//  Synchronized.swift
 //  fut
 //
 //  Created by Nikolay on 1/23/17.

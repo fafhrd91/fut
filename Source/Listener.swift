@@ -1,9 +1,9 @@
 //
-//  signal.swift
+//  Listener.swift
 //  fut
 //
-//  Created by Nikolay Kim on 1/23/17.
-//  Copyright © 2017 Nikolay Kim. All rights reserved.
+//  Created by Nikolay on 1/25/17.
+//  Copyright © 2017 nkim. All rights reserved.
 //
 
 import Foundation
@@ -24,72 +24,14 @@ public enum Target {
 }
 
 
-public final class Signal<T> {
-
-    private var listeners = Set<SignalDispatcher<T>>()
-
-    public func wait(_ exec:Target, f:@escaping (T) -> Void) -> SignalListener
-    {
-        return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(exec, waiter:f)).memberAfterInsert
-        }
-    }
-
-    public func wait<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, T) -> Void) -> SignalListener
-    {
-        return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(context, exec:exec, waiter:f)).memberAfterInsert
-        }
-    }
-
-    public func notify(_ exec:Target, f:@escaping () -> Void) -> SignalListener
-    {
-        return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(exec, notify:f)).memberAfterInsert
-        }
-    }
-
-    public func notify<TContext: AnyObject>(_ context:TContext, exec:Target, f: @escaping (TContext) -> Void) -> SignalListener
-    {
-        return synchronized(self) {
-            return self.listeners.insert(SignalDispatcher(context, exec:exec, notify:f)).memberAfterInsert
-        }
-    }
-
-    public func fire(_ data: T)
-    {
-        if !self.listeners.isEmpty {
-            synchronized(self) {
-                var listeners = Set<SignalDispatcher<T>>()
-                for listener in self.listeners {
-                    if listener.dispatch(data) {
-                        listeners.insert(listener)
-                    }
-                }
-                self.listeners = listeners
-            }
-        }
-    }
-
-    public func reset()
-    {
-        synchronized(self) {
-            self.listeners.removeAll()
-        }
-    }
-
-    public init() {}
-
-}
-
-
-public func ==(lhs: SignalListener, rhs: SignalListener) -> Bool {
+public func ==(lhs: Listener, rhs: Listener) -> Bool {
     return lhs === rhs
 }
 
-public class SignalListener: Hashable {
+public class Listener: Hashable {
 
-    private(set) var cancelled = false
+    public let target: Target
+    public private(set) var cancelled = false
 
     public var hashValue: Int { return ObjectIdentifier(self).hashValue }
 
@@ -97,7 +39,11 @@ public class SignalListener: Hashable {
     {
         self.cancelled = true
     }
-    
+
+    public init(_ target: Target) {
+        self.target = target
+    }
+
     deinit {
         self.cancel()
     }
@@ -105,28 +51,30 @@ public class SignalListener: Hashable {
 }
 
 
-internal class SignalDispatcher<T>: SignalListener {
+internal class Dispatcher<T>: Listener {
 
-    let handler: (T) -> Bool
+    var handler: (T) -> Bool
 
-    init(_ exec:Target, notify:@escaping () -> Void)
+    init(_ target:Target, notify:@escaping () -> Void)
     {
         let handler: (T) -> Bool = { data in
-            switch exec {
-                case .Same: notify()
-                case .QoS(let qos): DispatchQueue.global(qos: qos).async { notify() }
-                case .Queue(let queue): queue.async { notify() }
+            switch target {
+            case .Same: notify()
+            case .QoS(let qos): DispatchQueue.global(qos: qos).async { notify() }
+            case .Queue(let queue): queue.async { notify() }
             }
             return true
         }
 
         self.handler = handler
+
+        super.init(target)
     }
 
-    init(_ exec:Target, waiter:@escaping (T) -> Void)
+    init(_ target:Target, waiter:@escaping (T) -> Void)
     {
         let handler: (T) -> Bool = { data in
-            switch exec {
+            switch target {
                 case .Same: waiter(data)
                 case .QoS(let qos): DispatchQueue.global(qos: qos).async { waiter(data) }
                 case .Queue(let queue): queue.async { waiter(data) }
@@ -135,13 +83,15 @@ internal class SignalDispatcher<T>: SignalListener {
         }
 
         self.handler = handler
+
+        super.init(target)
     }
-    
-    init<TContext: AnyObject>(_ context:TContext, exec:Target, notify:@escaping (TContext) -> Void)
+
+    init<TContext: AnyObject>(_ context:TContext, target:Target, notify:@escaping (TContext) -> Void)
     {
         let handler: (T) -> Bool = { [weak context] data in
             if let context = context {
-                switch exec {
+                switch target {
                     case .Same: notify(context)
                     case .QoS(let qos): DispatchQueue.global(qos: qos).async { notify(context) }
                     case .Queue(let queue): queue.async { notify(context) }
@@ -152,13 +102,15 @@ internal class SignalDispatcher<T>: SignalListener {
         }
 
         self.handler = handler
+
+        super.init(target)
     }
-    
-    init<TContext: AnyObject>(_ context:TContext, exec:Target, waiter:@escaping (TContext, T) -> Void)
+
+    init<TContext: AnyObject>(_ context:TContext, target:Target, waiter:@escaping (TContext, T) -> Void)
     {
         let handler: (T) -> Bool = { [weak context] data in
             if let context = context {
-                switch exec {
+                switch target {
                     case .Same: waiter(context, data)
                     case .QoS(let qos): DispatchQueue.global(qos: qos).async { waiter(context, data) }
                     case .Queue(let queue): queue.async { waiter(context, data) }
@@ -169,6 +121,8 @@ internal class SignalDispatcher<T>: SignalListener {
         }
 
         self.handler = handler
+
+        super.init(target)
     }
 
     func dispatch(_ data: T) -> Bool
@@ -184,11 +138,11 @@ internal class SignalDispatcher<T>: SignalListener {
 }
 
 
-public class SignalListeners {
+public class Listeners {
 
-    private(set) var listeners = Set<SignalListener>()
+    private(set) var listeners = Set<Listener>()
 
-    public func set(_ listeners: SignalListener...)
+    public func set(_ listeners: Listener...)
     {
         synchronized(self) {
             // reset
@@ -200,7 +154,7 @@ public class SignalListeners {
         }
     }
 
-    public func append(_ listeners: SignalListener...)
+    public func append(_ listeners: Listener...)
     {
         synchronized(self) {
             self.listeners = self.listeners.union(listeners)

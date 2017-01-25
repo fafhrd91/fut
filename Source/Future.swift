@@ -1,5 +1,5 @@
 //
-//  future.swift
+//  Future.swift
 //  fut
 //
 //  Created by Nikolay Kim on 1/24/17.
@@ -24,88 +24,95 @@ public func ==<T>(lhs: Future<T>, rhs: Future<T>) -> Bool {
 
 public class Future<TResult>: Equatable, Hashable {
 
-    private var handlers = Set<SignalDispatcher<TResult>>()
-    private var notifyHandlers = Set<SignalDispatcher<FutureState<TResult>>>()
+    private var handlers = Set<Dispatcher<TResult>>()
+    private var notifyHandlers = Set<Dispatcher<FutureState<TResult>>>()
 
     public private(set) var state: FutureState<TResult> = .pending
 
     public var hashValue: Int { return ObjectIdentifier(self).hashValue }
 
-    public func wait(_ exec:Target, f:@escaping (TResult) -> Void) -> Future<TResult>
+    public func wait(_ on:Target, f:@escaping (TResult) -> Void) -> Listener
     {
-        synchronized(self) {
-            switch self.state {
-                case .finished(let result):
-                    f(result)
-                case .pending:
-                    self.handlers.insert(SignalDispatcher(exec, waiter:f))
-                default: ()
-            }
+        let handler = Dispatcher(on, waiter:f)
+
+        switch self.state {
+            case .finished(let result):
+                _ = handler.dispatch(result)
+            case .pending:
+                synchronized(self) {
+                    _ = self.handlers.insert(handler)
+                }
+            default: ()
         }
-        return self
+        return handler
     }
 
-    public func wait<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, TResult) -> Void) -> Future<TResult>
+    public func wait<TContext: AnyObject>(_ context:TContext, on:Target, f:@escaping (TContext, TResult) -> Void) -> Listener
     {
-        let handler = SignalDispatcher(context, exec:exec, waiter:f)
+        let handler = Dispatcher(context, target:on, waiter:f)
 
-        synchronized(self) {
-            switch self.state {
-                case .finished(let result):
-                    handler.dispatch(result)
-                case .pending:
-                    self.handlers.insert(handler)
-                default: ()
+        switch self.state {
+            case .finished(let result):
+                _ = handler.dispatch(result)
+            case .pending:
+                synchronized(self) {
+                    _ = self.handlers.insert(handler)
+                }
+            default: ()
+        }
+        return handler
+    }
+
+    public func notify(_ on:Target, f:@escaping (FutureState<TResult>) -> Void) -> Listener
+    {
+        let handler = Dispatcher(on, waiter:f)
+
+        if self.isDone() {
+            _ = handler.dispatch(self.state)
+        } else {
+            synchronized(self) {
+                _ = self.notifyHandlers.insert(handler)
             }
         }
-        return self
+        return handler
     }
     
-    public func notify(_ exec:Target, f:@escaping (FutureState<TResult>) -> Void) -> Future<TResult>
+    public func notify<TContext: AnyObject>(_ context:TContext, on:Target, f:@escaping (TContext, FutureState<TResult>) -> Void) -> Listener
     {
-        let handler = SignalDispatcher(exec, waiter:f)
+        let handler = Dispatcher(context, target:on, waiter:f)
 
-        synchronized(self) {
-            if self.isDone() {
-                handler.dispatch(self.state)
-            } else {
-                self.notifyHandlers.insert(handler)
+        if self.isDone() {
+            _ = handler.dispatch(self.state)
+        } else {
+            synchronized(self) {
+                _ = self.notifyHandlers.insert(handler)
             }
         }
-        return self
-    }
-    
-    public func notify<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, FutureState<TResult>) -> Void) -> Future<TResult>
-    {
-        let handler = SignalDispatcher(context, exec:exec, waiter:f)
-
-        synchronized(self) {
-            if self.isDone() {
-                handler.dispatch(self.state)
-            } else {
-                self.notifyHandlers.insert(handler)
-            }
-        }
-        return self
+        return handler
     }
     
     public func set(_ result: TResult) -> Bool
     {
-        if self.isDone() { return false }
+        return synchronized(self) {
+            switch self.state {
+                case .pending:
+                    self.state = .finished(result)
 
-        synchronized(self) {
-            self.state = .finished(result)
+                    for handler in self.handlers {
+                        _ = handler.dispatch(result)
+                    }
+                    for handler in self.notifyHandlers {
+                        _ = handler.dispatch(self.state)
+                    }
 
-            for handler in self.handlers {
-                _ = handler.dispatch(result)
+                    self.handlers.removeAll()
+                    self.notifyHandlers.removeAll()
+            
+                    return true
+                default:
+                    return false
             }
-            for handler in self.notifyHandlers {
-                _ = handler.dispatch(self.state)
-            }
-            self.handlers.removeAll()
-            self.notifyHandlers.removeAll()
         }
-        return true
     }
 
     public func cancel() -> Bool
