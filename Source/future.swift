@@ -47,12 +47,14 @@ public class Future<TResult>: Equatable, Hashable {
 
     public func wait<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, TResult) -> Void) -> Future<TResult>
     {
+        let handler = SignalDispatcher(context, exec:exec, waiter:f)
+
         synchronized(self) {
             switch self.state {
                 case .finished(let result):
-                    f(context, result)
+                    handler.dispatch(result)
                 case .pending:
-                    self.handlers.insert(SignalDispatcher(context, exec:exec, waiter:f))
+                    self.handlers.insert(handler)
                 default: ()
             }
         }
@@ -61,11 +63,13 @@ public class Future<TResult>: Equatable, Hashable {
     
     public func notify(_ exec:Target, f:@escaping (FutureState<TResult>) -> Void) -> Future<TResult>
     {
+        let handler = SignalDispatcher(exec, waiter:f)
+
         synchronized(self) {
             if self.isDone() {
-                f(self.state)
+                handler.dispatch(self.state)
             } else {
-                self.notifyHandlers.insert(SignalDispatcher(exec, waiter:f))
+                self.notifyHandlers.insert(handler)
             }
         }
         return self
@@ -73,11 +77,13 @@ public class Future<TResult>: Equatable, Hashable {
     
     public func notify<TContext: AnyObject>(_ context:TContext, exec:Target, f:@escaping (TContext, FutureState<TResult>) -> Void) -> Future<TResult>
     {
+        let handler = SignalDispatcher(context, exec:exec, waiter:f)
+
         synchronized(self) {
             if self.isDone() {
-                f(context, self.state)
+                handler.dispatch(self.state)
             } else {
-                self.notifyHandlers.insert(SignalDispatcher(context, exec:exec, waiter:f))
+                self.notifyHandlers.insert(handler)
             }
         }
         return self
