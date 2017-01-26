@@ -49,7 +49,9 @@ class SignalTests: XCTestCase {
             group2.enter()
             queue.async {
                 _ = signal.notify(self, on: .Queue(queue)) { ctx in
-                    result += 1
+                    synchronized(ctx) {
+                        result += 1
+                    }
                     group2.leave()
                 }
                 group.leave()
@@ -81,7 +83,9 @@ class SignalTests: XCTestCase {
             group2.enter()
             queue.async {
                 _ = signal.wait(self, on: .Queue(queue)) { ctx, res in
-                    result += res
+                    synchronized(ctx) {
+                        result += res
+                    }
                     group2.leave()
                 }
                 group.leave()
