@@ -15,6 +15,7 @@
 		95B34FF21E3821B800C53AC4 /* Future.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B34FF11E3821B800C53AC4 /* Future.swift */; };
 		95B34FF41E3915EB00C53AC4 /* Listener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B34FF31E3915EB00C53AC4 /* Listener.swift */; };
 		95B34FF61E391D6E00C53AC4 /* ListenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B34FF51E391D6E00C53AC4 /* ListenerTests.swift */; };
+		95B34FF81E396D5100C53AC4 /* FutureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B34FF71E396D5100C53AC4 /* FutureTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +41,7 @@
 		95B34FF11E3821B800C53AC4 /* Future.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Future.swift; path = Source/Future.swift; sourceTree = SOURCE_ROOT; };
 		95B34FF31E3915EB00C53AC4 /* Listener.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Listener.swift; path = Source/Listener.swift; sourceTree = SOURCE_ROOT; };
 		95B34FF51E391D6E00C53AC4 /* ListenerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ListenerTests.swift; path = Tests/ListenerTests.swift; sourceTree = SOURCE_ROOT; };
+		95B34FF71E396D5100C53AC4 /* FutureTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FutureTests.swift; path = Tests/FutureTests.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,9 +88,9 @@
 			children = (
 				95B34FF11E3821B800C53AC4 /* Future.swift */,
 				95B34FF31E3915EB00C53AC4 /* Listener.swift */,
-				9571C5D51E36B3F2009601C0 /* Info.plist */,
 				956276881E36BA87008C2D2F /* Signal.swift */,
 				9571C5DE1E36B84C009601C0 /* Synchronized.swift */,
+				9571C5D51E36B3F2009601C0 /* Info.plist */,
 			);
 			name = Source;
 			path = defer;
@@ -97,8 +99,9 @@
 		956A86F11E36B24100E2B6D7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				9562768A1E36D352008C2D2F /* SignalTests.swift */,
+				95B34FF71E396D5100C53AC4 /* FutureTests.swift */,
 				95B34FF51E391D6E00C53AC4 /* ListenerTests.swift */,
+				9562768A1E36D352008C2D2F /* SignalTests.swift */,
 				9571C5D81E36B3FC009601C0 /* Info.plist */,
 			);
 			name = Tests;
@@ -229,6 +232,7 @@
 			files = (
 				9562768B1E36D352008C2D2F /* SignalTests.swift in Sources */,
 				95B34FF61E391D6E00C53AC4 /* ListenerTests.swift in Sources */,
+				95B34FF81E396D5100C53AC4 /* FutureTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

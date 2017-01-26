@@ -16,7 +16,7 @@ public enum FutureState<TResult> {
 
 
 public func ==<T>(lhs: Future<T>, rhs: Future<T>) -> Bool {
-    return lhs === lhs
+    return lhs === rhs
 }
 
 
@@ -89,9 +89,9 @@ public class Future<TResult>: Equatable, Hashable {
         return handler
     }
     
-    public func set(_ result: TResult) -> Bool
+    public func set(_ result: TResult)
     {
-        return synchronized(self) {
+        synchronized(self) {
             switch self.state {
                 case .pending:
                     self.state = .finished(result)
@@ -105,10 +105,8 @@ public class Future<TResult>: Equatable, Hashable {
 
                     self.handlers.removeAll()
                     self.notifyHandlers.removeAll()
-            
-                    return true
                 default:
-                    return false
+                    ()
             }
         }
     }
@@ -149,7 +147,7 @@ public class Future<TResult>: Equatable, Hashable {
         }
     }
 
-    public func copy(from: Future<TResult>)
+    public func merge(_ from: Future<TResult>)
     {
         synchronized(from) {
             synchronized(self) {
@@ -173,7 +171,7 @@ public class Future<TResult>: Equatable, Hashable {
 
     public init() {}
 
-    public init(result:TResult) {
+    public init(_ result: TResult) {
         _ = self.set(result)
     }
 

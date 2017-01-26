@@ -22,11 +22,3 @@ public func synchronized<T>(_ lock: AnyObject, _ f: () -> T) -> T {
     }
     return f()
 }
-
-public func synchronized(_ lock: NSLock, _ f: () -> ()) {
-    lock.lock()
-    defer {
-        lock.unlock()
-    }
-    f()
-}
